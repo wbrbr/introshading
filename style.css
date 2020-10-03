@@ -25,3 +25,8 @@ html, body {
 canvas {
     display: block;
 }
+
+#editor {
+    width: 100%;
+    height: 60%;
+}

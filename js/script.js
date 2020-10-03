@@ -5,7 +5,7 @@ let container = document.getElementById('container');
 let renderer = new THREE.WebGLRenderer();
 // renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setSize(window.innerWidth / 3., window.innerWidth / 3);
-container.appendChild(renderer.domElement);
+container.prepend(renderer.domElement);
 
 // let geometry = new THREE.BoxGeometry();
 let geometry = new THREE.SphereGeometry(1, 32, 32);
@@ -20,7 +20,7 @@ cube.add(axes);
 scene.add(cube);
 
 camera.position.z = +5;
-// camera.rotation.y = 3.14;
+
 
 function animate() {
     requestAnimationFrame(animate);
@@ -29,3 +29,7 @@ function animate() {
     // cube.rotation.y += .01;
 }
 animate();
+
+let editor = ace.edit('editor');
+editor.session.setMode('ace/mode/glsl');
+ace.resize();
