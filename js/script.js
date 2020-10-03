@@ -1,3 +1,6 @@
+let editor = ace.edit('editor');
+editor.session.setMode('ace/mode/glsl');
+
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
 
@@ -9,10 +12,11 @@ container.prepend(renderer.domElement);
 
 // let geometry = new THREE.BoxGeometry();
 let geometry = new THREE.SphereGeometry(1, 32, 32);
-let material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+// TODO: change to MeshBasicMaterial
+let material = new THREE.ShaderMaterial();
 material.onBeforeCompile = function(shader) {
     shader.vertexShader = document.getElementById('vertexShader').text;
-    shader.fragmentShader = document.getElementById('fragmentShader').text;
+    shader.fragmentShader = editor.getValue()
 }
 let cube = new THREE.Mesh(geometry, material);
 let axes = new THREE.AxesHelper(30);
@@ -30,6 +34,8 @@ function animate() {
 }
 animate();
 
-let editor = ace.edit('editor');
-editor.session.setMode('ace/mode/glsl');
-ace.resize();
+editor.resize();
+document.getElementById('run').addEventListener('click', function() {
+    material.fragmentShader = editor.getValue();
+    material.needsUpdate = true;
+});
