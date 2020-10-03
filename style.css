@@ -1,0 +1,14 @@
+#content {
+    position: relative;
+    width: 50%;
+}
+
+#container {
+    position: absolute;
+    right: 0px;
+    width: 50%;
+}
+
+canvas {
+    display: block;
+}

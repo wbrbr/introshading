@@ -1,9 +1,11 @@
 let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+let camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
 
+let container = document.getElementById('container');
 let renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+// renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setSize(window.innerWidth / 3., window.innerWidth / 3);
+container.appendChild(renderer.domElement);
 
 // let geometry = new THREE.BoxGeometry();
 let geometry = new THREE.SphereGeometry(1, 32, 32);
