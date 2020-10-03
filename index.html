@@ -2,31 +2,62 @@
 <html>
     <head>
         <meta charset="utf8"/>
-        <title>Three.js test</title>
+        <title>Introduction au shading</title>
+        <link rel="stylesheet" href="res/prism.css"/>
         <link rel="stylesheet" href="style.css"/>
     </head>
 
     <body>
         <div id='main'>
-            <article id='content'>hello<br>aaaaaaaaaaa<br><br><br><br>fuuuuck</article>
-            <div id='container'>
-                <button id='run'>Run Shader</button>
-                <div id="editor">varying vec3 vPosition;
-varying vec3 vNormal;
+            <article id='content' class='language-glsl'>
+                <h1>Introduction au shading</h1>
+                <p>Fragment shader: programme qui renvoie la couleur d'un pixel. Il prend en entrée la position, la normale, la position de la lumière, etc.</p>
 
+                <p>Ce programme est exécuté pour chaque pixel. C'est là que notre meilleure amie entre en jeu: la carte graphique. C'est elle qui va se charger d'exécuter les shaders, son grand atout étant le parallélisme: grâce à ses milliers de coeurs (contre quelques dizaines max pour un CPU) elle peut exécuter les shaders en parallèle et gagner ainsi beaucoup de temps.</p>
+
+                <p>Notre objectif ici est d'apprendre à écrire des shaders basiques, et puis de voir comment coder quelques modèles de matériaux très simples.</p>
+
+                <h3>Étape 1: couleur constante</h3>
+                <p>Normalement vous devriez avoir un carré noir ainsi qu'un éditeur de code à droite de l'écran. L'éditeur devrait contenir le morceau de code suivant:</p>
+                <pre><code>varying vec3 vPosition;
+varying vec3 vNormal;
+uniform vec3 uLightPos;
+
+void main() {
+    gl_FragColor = vec4(0., 0., 0., 1.);
+}</code></pre>
+                <p>Voilà notre shader qui affiche pour l'instant un écran noir. Il est écrit dans un langage qui s'appelle GLSL (pour <i>OpenGL Shading Language</i>) et qui ressemble à du C en termes de syntaxe.</p>
+                <p>Les 3 premières lignes commencent par les mots-clé <code>varying</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre trois variables <code>vPosition, vNormal, vLightPos</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
+                <ul>
+                    <li><code>vPosition</code> contient la position du point de la sphère correspondant à notre pixel</li> // TODO: reformuler
+                    <li><code>vNormal</code> contient le vecteur normal à la sphère au point correspondant à notre pixel</li>
+                    <li><code>vLightPos</code> correspond à la position de la lumière</li>
+                </ul>
+                <p>Expliquer varying vs uniform</p>
+                <p>Le travail de notre shader sera donc de calculer la couleur finale du pixel à partir de tous ces paramètres, et de le stocker dans la variable spéciale <code>gl_FragColor</code></p>.
+
+                <p>Expliquer représentation des couleurs</p>
+            </article>
+            <div id='wrap'>
+                <div id='container'></div>
+                <div id='editorwrap'>
+                    <button id='run'>Run Shader</button>
+                    <div id="editor">varying vec3 vPosition;
+varying vec3 vNormal;
+            
 void main() {
     vec3 N = normalize(vNormal);
     vec3 L = .5 * normalize(vec3(-.3, .3, .3));
     gl_FragColor = vec4(vec3(dot(N, L)), 1.0);
-}</div>
+}                   </div>
+                </div>
             </div>
-        </div>
-        <script id="vertexShader" type="x-shader/x-vertex">
-            precision mediump float;
-            precision mediump int;
-
-            varying vec3 vNormal;
-            varying vec3 vPosition;
+            <script id="vertexShader" type="x-shader/x-vertex">
+                        precision mediump float;
+                        precision mediump int;
+            
+                        varying vec3 vNormal;
+                        varying vec3 vPosition;
 
             void main() {
                 mat4 M = projectionMatrix * modelViewMatrix;
@@ -50,6 +81,12 @@ void main() {
         </script>
         <script src="js/three.js"></script>
         <script src="js/ace.js"></script>
+        <script src="js/prism.js"></script>
+        <!--<script>hljs.initHighlightingOnLoad();
+        for (let el of document.getElementsByTagName('code')) {
+            hljs.highlightBlock(el);
+        }
+        </script> -->
         <script src="js/script.js"></script>
     </body>
 </html>
