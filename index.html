@@ -19,7 +19,7 @@
                 <p>Normalement vous devriez avoir un carré noir ainsi qu'un éditeur de code à droite de l'écran. L'éditeur devrait contenir le morceau de code suivant:</p>
                 <pre><code>in vec3 vPosition;
 in vec3 vNormal;
-uniform vec3 uLightPos;
+uniform vec3 uLightDirection;
 uniform vec3 uLightColor;
 
 void main() {
@@ -27,11 +27,11 @@ void main() {
     gl_FragColor = vec4(finalColor, 1.);
 }</code></pre>
                 <p>Voilà notre shader qui affiche pour l'instant un écran noir. Il est écrit dans un langage qui s'appelle GLSL (pour <i>OpenGL Shading Language</i>) et qui ressemble à du C en termes de syntaxe.</p>
-                <p>Les 3 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre trois variables <code>vPosition, vNormal, uLightPos</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
+                <p>Les 3 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre quatre variables <code>vPosition, vNormal, uLightDirection, uLightColor</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
                 <ul>
                     <li><code>vPosition</code> contient la position du point de la sphère correspondant à notre pixel</li> // TODO: reformuler
                     <li><code>vNormal</code> contient le vecteur normal à la sphère au point correspondant à notre pixel</li>
-                    <li><code>uLightPos</code> contient la position de la lampe</li>
+                    <li><code>uLightDirection</code> contient la direction de la lumière</li>
                     <li><code>uLightColor</code> contient la couleur de la lumière</li>
                 </ul>
                 <p>Expliquer in vs uniform</p>
@@ -49,15 +49,16 @@ void main() {
 
                 <p>Sur ces schémas on voit que plus la normale est alignée avec la direction de la lumière, plus notre surface est éclairée. Or on a un outil bien pratique pour mesurer l'alignement de deux vecteurs: le produit scalaire. La quantité de lumière reçue est en fait proportionnelle au produit scalaire de la normale \(\mathbf{n}\) et de la direction inverse de la lumière \(\mathbf{L}\): </p>
                 <p><img src="res/schema.png" width=50%/></p>
-                <p>On sait aussi que plus la lumière est proche de la surface, plus celle-ci est éclairée. Plus exactement, la quantité de lumière reçue décroit comme le carré de la distance qui sépare notre point de la lumière, ce qui donne la formule finale suivante pour calculer la couleur d'un point de position: \(\mathbf{p}\), de normale \(\mathbf{n}\) et éclairé par une lumière de position \(\mathbf{l}\):
+                <p>Cela nous donne la formule suivante pour calculer la couleur d'un point de normale \(\mathbf{n}\) éclairé par une lumière de direction \(-\mathbf{L}\):
 
-                    \[ \frac{\text{couleur de l'objet} * \text{couleur de la lumière}}{\lVert l - p\rVert^2} \times \frac{n \cdot (l - p)}{\lVert l-p\rVert }\]
+                    \[ \max(0, n \cdot L) \times \text{couleur de l'objet} * \text{couleur de la lumiere}\]
                 </p>
                 en notant \(*\) la multiplication composante par composante.
                 <p>En GLSL beaucoup d'opération sur les vecteurs sont définies par défaut: l'addition et la multiplication par un scalaire bien sur mais aussi:</p>
                 <ul>
                     <li>Le produit scalaire avec <code>dot(a,b)</code></li>
                     <li>La longueur d'un vecteur avec <code>length(v)</code>, ou encore la distance entre deux points avec <code>distance(a, b)</code></li>
+                    <li>La normalisation avec <code>normalize(v)</code></li>
                     <li>La multiplication composante par composante avec <code>a * b</code> (qui n'a pas trop de sens pour des vecteurs ou des points, mais très utile pour manipuler des couleurs)</li>
                 </ul>
 
@@ -67,6 +68,8 @@ void main() {
                         <figcaption>Mon résultat avec la couleur <code>vec3(1., 0., 0.)</code></figcaption>
                     </figure>
                 </p>
+
+                <h3>Étape 3: Modèle de Phong</h3>
             </article>
             <div id='wrap'>
                 <div id='container'></div>
@@ -74,7 +77,7 @@ void main() {
                     <button id='run'>Run Shader</button>
                     <div id="editor">in vec3 vPosition;
 in vec3 vNormal;
-uniform vec3 uLightPos;
+uniform vec3 uLightDirection;
 uniform vec3 uLightColor;
             
 void main() {
@@ -108,5 +111,6 @@ void main() {
         <script src="js/script.js"></script>
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
         <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>MathJax.chtml.scale = 0.8;</script>
     </body>
 </html>

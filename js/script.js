@@ -17,8 +17,8 @@ let material = new THREE.ShaderMaterial({
     fragmentShader: editor.getValue(),
 
     uniforms: {
-        uLightPos: {value: new THREE.Vector3(1., 1., 3.)},
-        uLightColor: {value: new THREE.Vector3(3., 3., 3.)}
+        uLightDirection: {value: new THREE.Vector3(-1., -1., -3.).normalize()},
+        uLightColor: {value: new THREE.Vector3(1., 1., 1.)}
     }
 });
 material.onBeforeCompile = function(shader) {
