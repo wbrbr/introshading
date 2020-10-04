@@ -75,6 +75,9 @@ void main() {
                 <div id='container'></div>
                 <div id='editorwrap'>
                     <button id='run'>Run Shader</button>
+                    <button id='sphere'>Sphere</button>
+                    <button id='box'>Box</button>
+                    <button id='plane'>Plane</button>
                     <div id="editor">in vec3 vPosition;
 in vec3 vNormal;
 uniform vec3 uLightDirection;
@@ -88,19 +91,19 @@ void main() {
                 </div>
             </div>
             <script id="vertexShader" type="x-shader/x-vertex">
-                        precision mediump float;
-                        precision mediump int;
-            
                         out vec3 vNormal;
                         out vec3 vPosition;
+                        out vec2 vTextureCoords;
 
             void main() {
                 mat4 M = projectionMatrix * modelViewMatrix;
                 vNormal = normalize(vec3(transpose(inverse(modelMatrix)) * vec4(normal, 0.)));
                 gl_Position = M * vec4(position, 1.);
                 vPosition = gl_Position.xyz;
+                vTextureCoords = uv;
             }</script>
         <script src="js/three.js"></script>
+        <script src="js/OrbitControls.js"></script>
         <script src="js/ace.js"></script>
         <script src="js/prism.js"></script>
         <!--<script>hljs.initHighlightingOnLoad();
@@ -110,7 +113,7 @@ void main() {
         </script> -->
         <script src="js/script.js"></script>
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>MathJax.chtml.scale = 0.8;</script>
     </body>
 </html>

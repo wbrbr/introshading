@@ -10,31 +10,35 @@ let renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerHeight / 2, window.innerHeight / 2);
 container.prepend(renderer.domElement);
 
-// let geometry = new THREE.BoxGeometry();
-let geometry = new THREE.SphereGeometry(1, 32, 32);
+let box = new THREE.BoxGeometry();
+let sphere = new THREE.SphereGeometry(1, 32, 32);
+let plane = new THREE.PlaneGeometry();
+let woodTexture = new THREE.TextureLoader().load("res/wood.jpg");
 let material = new THREE.ShaderMaterial({
     vertexShader: document.getElementById('vertexShader').text,
     fragmentShader: editor.getValue(),
 
     uniforms: {
         uLightDirection: {value: new THREE.Vector3(-1., -1., -3.).normalize()},
-        uLightColor: {value: new THREE.Vector3(1., 1., 1.)}
+        uLightColor: {value: new THREE.Vector3(1., 1., 1.)},
+        uWoodTexture: {value: woodTexture}
     }
 });
 material.onBeforeCompile = function(shader) {
     shader.vertexShader = document.getElementById('vertexShader').text;
     shader.fragmentShader = editor.getValue()
 }
-let cube = new THREE.Mesh(geometry, material);
-// let axes = new THREE.AxesHelper(30);
-// cube.add(axes);
-scene.add(cube);
+let mesh = new THREE.Mesh(sphere, material);
+scene.add(mesh);
 
 camera.position.z = +2;
+
+let controls = new OrbitControls(camera, renderer.domElement);
 
 
 function animate() {
     requestAnimationFrame(animate);
+    controls.update();
     renderer.render(scene, camera);
 }
 animate();
@@ -53,6 +57,18 @@ document.getElementById('run').addEventListener('click', function() {
     } else {
         document.getElementById('error').textContent = gl.getShaderInfoLog(program.fragmentShader);
     }
+});
+
+document.getElementById('sphere').addEventListener('click', function() {
+    mesh.geometry = sphere;
+});
+
+document.getElementById('box').addEventListener('click', function() {
+    mesh.geometry = box;
+});
+
+document.getElementById('plane').addEventListener('click', function() {
+    mesh.geometry = plane;
 });
 
 window.addEventListener('resize', function() {
