@@ -11,74 +11,92 @@
         <div id='main'>
             <article id='content' class='language-glsl'>
                 <h1>Introduction au shading</h1>
-                <p>Fragment shader: programme qui renvoie la couleur d'un pixel. Il prend en entrée la position, la normale, la position de la lumière, etc.</p>
-
-                <p>Ce programme est exécuté pour chaque pixel. C'est là que notre meilleure amie entre en jeu: la carte graphique. C'est elle qui va se charger d'exécuter les shaders, son grand atout étant le parallélisme: grâce à ses milliers de coeurs (contre quelques dizaines max pour un CPU) elle peut exécuter les shaders en parallèle et gagner ainsi beaucoup de temps.</p>
+                <p>Dans ce petit article on va s'intéresser à la dernière étape du pipeline graphique: le calcul de la couleur finale d'un pixel. Cette opération est réalisée par le fragment shader, qui est un type de shader (c'est-à-dire de programme qui s'exécute sur la carte graphique) dont le travail est de calculer la couleur finale d'un pixel. Pour faire ce calcul on aura besoin de la position du point de la scène correspondant au pixel, de la normale en ce point, de la position de la lumière ainsi que de sa couleur.</p>
 
                 <p>Notre objectif ici est d'apprendre à écrire des shaders basiques, et puis de voir comment coder quelques modèles de matériaux très simples.</p>
 
                 <h3>Étape 1: couleur constante</h3>
                 <p>Normalement vous devriez avoir un carré noir ainsi qu'un éditeur de code à droite de l'écran. L'éditeur devrait contenir le morceau de code suivant:</p>
-                <pre><code>varying vec3 vPosition;
-varying vec3 vNormal;
+                <pre><code>in vec3 vPosition;
+in vec3 vNormal;
 uniform vec3 uLightPos;
+uniform vec3 uLightColor;
 
 void main() {
-    gl_FragColor = vec4(0., 0., 0., 1.);
+    vec3 finalColor = vec3(0., 0., 0.);
+    gl_FragColor = vec4(finalColor, 1.);
 }</code></pre>
                 <p>Voilà notre shader qui affiche pour l'instant un écran noir. Il est écrit dans un langage qui s'appelle GLSL (pour <i>OpenGL Shading Language</i>) et qui ressemble à du C en termes de syntaxe.</p>
-                <p>Les 3 premières lignes commencent par les mots-clé <code>varying</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre trois variables <code>vPosition, vNormal, vLightPos</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
+                <p>Les 3 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre trois variables <code>vPosition, vNormal, uLightPos</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
                 <ul>
                     <li><code>vPosition</code> contient la position du point de la sphère correspondant à notre pixel</li> // TODO: reformuler
                     <li><code>vNormal</code> contient le vecteur normal à la sphère au point correspondant à notre pixel</li>
-                    <li><code>vLightPos</code> correspond à la position de la lumière</li>
+                    <li><code>uLightPos</code> contient la position de la lampe</li>
+                    <li><code>uLightColor</code> contient la couleur de la lumière</li>
                 </ul>
-                <p>Expliquer varying vs uniform</p>
-                <p>Le travail de notre shader sera donc de calculer la couleur finale du pixel à partir de tous ces paramètres, et de le stocker dans la variable spéciale <code>gl_FragColor</code></p>.
+                <p>Expliquer in vs uniform</p>
+                <p>Le travail de notre shader sera donc de calculer la couleur finale du pixel à partir de tous ces paramètres, et de le stocker dans la variable spéciale <code>gl_FragColor</code></p>. <code>glFragColor</code> est un <code>vec4</code> (vecteur à 4 composantes) au format RGBA pour Red, Green, Blue, Alpha (= opacité). Toutes les composantes sont dans l'intervalle \([0, 1]\), donc <code>vec4(0., 0., 0., 1.)</code> représente du noir et <code>vec4(1., 1.,1., 1.)</code> du blanc. Pour que notre sphère soit composée d'une couleur unie il y a juste à choisir une couleur et à affecter <code>gl_FragColor</code> !
 
-                <p>Expliquer représentation des couleurs</p>
+                <p>
+                <figure>
+                    <img src="res/resultat1.png" width=50% />
+                    <figcaption>Mon résultat avec la couleur <code>vec3(1., 0., 0.)</code></figcaption>
+                </figure>
+                </p>
+
+                <h3>Étape 2: matériau diffus</h3>
+                <p>Le modèle le plus simple de l'éclairage d'une surface est un matériau qui diffuse la lumière de manière uniforme dans toutes les directions. Ainsi les seuls paramètres qui ont un impact sur l'apparence d'un point de la surface sont son vecteur normal ainsi que la position de la lumière. En effet, plus la surface fait face à la lampe, plus celle reçoit de lumière</p>
+
+                <p>Sur ces schémas on voit que plus la normale est alignée avec la direction de la lumière, plus notre surface est éclairée. Or on a un outil bien pratique pour mesurer l'alignement de deux vecteurs: le produit scalaire. La quantité de lumière reçue est en fait proportionnelle au produit scalaire de la normale \(\mathbf{n}\) et de la direction inverse de la lumière \(\mathbf{L}\): </p>
+                <p><img src="res/schema.png" width=50%/></p>
+                <p>On sait aussi que plus la lumière est proche de la surface, plus celle-ci est éclairée. Plus exactement, la quantité de lumière reçue décroit comme le carré de la distance qui sépare notre point de la lumière, ce qui donne la formule finale suivante pour calculer la couleur d'un point de position: \(\mathbf{p}\), de normale \(\mathbf{n}\) et éclairé par une lumière de position \(\mathbf{l}\):
+
+                    \[ \frac{\text{couleur de l'objet} * \text{couleur de la lumière}}{\lVert l - p\rVert^2} \times \frac{n \cdot (l - p)}{\lVert l-p\rVert }\]
+                </p>
+                en notant \(*\) la multiplication composante par composante.
+                <p>En GLSL beaucoup d'opération sur les vecteurs sont définies par défaut: l'addition et la multiplication par un scalaire bien sur mais aussi:</p>
+                <ul>
+                    <li>Le produit scalaire avec <code>dot(a,b)</code></li>
+                    <li>La longueur d'un vecteur avec <code>length(v)</code>, ou encore la distance entre deux points avec <code>distance(a, b)</code></li>
+                    <li>La multiplication composante par composante avec <code>a * b</code> (qui n'a pas trop de sens pour des vecteurs ou des points, mais très utile pour manipuler des couleurs)</li>
+                </ul>
+
+                <p>
+                    <figure>
+                        <img src="res/resultat2.png" width=50% />
+                        <figcaption>Mon résultat avec la couleur <code>vec3(1., 0., 0.)</code></figcaption>
+                    </figure>
+                </p>
             </article>
             <div id='wrap'>
                 <div id='container'></div>
                 <div id='editorwrap'>
                     <button id='run'>Run Shader</button>
-                    <div id="editor">varying vec3 vPosition;
-varying vec3 vNormal;
+                    <div id="editor">in vec3 vPosition;
+in vec3 vNormal;
+uniform vec3 uLightPos;
+uniform vec3 uLightColor;
             
 void main() {
-    vec3 N = normalize(vNormal);
-    vec3 L = .5 * normalize(vec3(-.3, .3, .3));
-    gl_FragColor = vec4(vec3(dot(N, L)), 1.0);
-}                   </div>
+    vec3 finalColor = vec3(0., 0., 0.);
+    gl_FragColor = vec4(finalColor, 1.);
+}</div>
+                    <div id='error'></div>
                 </div>
             </div>
             <script id="vertexShader" type="x-shader/x-vertex">
                         precision mediump float;
                         precision mediump int;
             
-                        varying vec3 vNormal;
-                        varying vec3 vPosition;
+                        out vec3 vNormal;
+                        out vec3 vPosition;
 
             void main() {
                 mat4 M = projectionMatrix * modelViewMatrix;
                 vNormal = normalize(vec3(transpose(inverse(modelMatrix)) * vec4(normal, 0.)));
                 gl_Position = M * vec4(position, 1.);
                 vPosition = gl_Position.xyz;
-            }
-        </script>
-        <script id="fragmentShader" type="x-shader/x-fragment">
-            precision mediump float;
-            precision mediump int;
-
-            varying vec3 vPosition;
-            varying vec3 vNormal;
-
-            void main() {
-                vec3 N = normalize(vNormal);
-                vec3 L = .5 * normalize(vec3(-.3, .3, .3));
-                gl_FragColor = vec4(vec3(dot(vNormal, L)), 1.0);
-            }
-        </script>
+            }</script>
         <script src="js/three.js"></script>
         <script src="js/ace.js"></script>
         <script src="js/prism.js"></script>
@@ -88,5 +106,7 @@ void main() {
         }
         </script> -->
         <script src="js/script.js"></script>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     </body>
 </html>

@@ -12,8 +12,15 @@ container.prepend(renderer.domElement);
 
 // let geometry = new THREE.BoxGeometry();
 let geometry = new THREE.SphereGeometry(1, 32, 32);
-// TODO: change to MeshBasicMaterial
-let material = new THREE.ShaderMaterial();
+let material = new THREE.ShaderMaterial({
+    vertexShader: document.getElementById('vertexShader').text,
+    fragmentShader: editor.getValue(),
+
+    uniforms: {
+        uLightPos: {value: new THREE.Vector3(1., 1., 3.)},
+        uLightColor: {value: new THREE.Vector3(3., 3., 3.)}
+    }
+});
 material.onBeforeCompile = function(shader) {
     shader.vertexShader = document.getElementById('vertexShader').text;
     shader.fragmentShader = editor.getValue()
@@ -29,15 +36,23 @@ camera.position.z = +2;
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-    // cube.rotation.x += .01;
-    // cube.rotation.y += .01;
 }
 animate();
+
+let gl = renderer.getContext();
 
 editor.resize();
 document.getElementById('run').addEventListener('click', function() {
     material.fragmentShader = editor.getValue();
     material.needsUpdate = true;
+    renderer.compile(scene, material);
+    let program = renderer.info.programs[0];
+    let status = gl.getProgramParameter( program.program, gl.LINK_STATUS );
+    if (status) {
+        document.getElementById('error').textContent = '';
+    } else {
+        document.getElementById('error').textContent = gl.getShaderInfoLog(program.fragmentShader);
+    }
 });
 
 window.addEventListener('resize', function() {

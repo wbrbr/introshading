@@ -66,3 +66,19 @@ code[class*="language-"] {
     font-size: .9em;
     font-family: monospace;
 }
+
+figure {
+    display: flex;
+    flex-flow: column;
+    margin: auto;
+    max-width: 50%;
+}
+
+img {
+    margin: auto;
+}
+
+figcaption {
+    text-align: center;
+    font: italic smaller;
+}
