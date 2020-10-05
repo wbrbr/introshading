@@ -19,9 +19,9 @@ let material = new THREE.ShaderMaterial({
     fragmentShader: editor.getValue(),
 
     uniforms: {
-        uLightDirection: {value: new THREE.Vector3(-1., -1., -3.).normalize()},
-        uLightColor: {value: new THREE.Vector3(1., 1., 1.)},
-        uWoodTexture: {value: woodTexture}
+        LightDirection: {value: new THREE.Vector3(-1., -1., -3.).normalize()},
+        LightColor: {value: new THREE.Vector3(1., 1., 1.)},
+        WoodTexture: {value: woodTexture}
     }
 });
 material.onBeforeCompile = function(shader) {

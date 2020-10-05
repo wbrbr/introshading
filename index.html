@@ -17,25 +17,24 @@
 
                 <h3>Étape 1: couleur constante</h3>
                 <p>Normalement vous devriez avoir un carré noir ainsi qu'un éditeur de code à droite de l'écran. L'éditeur devrait contenir le morceau de code suivant:</p>
-                <pre><code>in vec3 vPosition;
-in vec3 vNormal;
-uniform vec3 uLightDirection;
-uniform vec3 uLightColor;
+                <pre><code>in vec3 Position;
+in vec3 Normal;
+uniform vec3 LightDirection;
+uniform vec3 LightColor;
 
 void main() {
     vec3 finalColor = vec3(0., 0., 0.);
     gl_FragColor = vec4(finalColor, 1.);
 }</code></pre>
                 <p>Voilà notre shader qui affiche pour l'instant un écran noir. Il est écrit dans un langage qui s'appelle GLSL (pour <i>OpenGL Shading Language</i>) et qui ressemble à du C en termes de syntaxe.</p>
-                <p>Les 3 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre quatre variables <code>vPosition, vNormal, uLightDirection, uLightColor</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
+                <p>Les 3 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre quatre variables <code>Position, Normal, LightDirection, LightColor</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
                 <ul>
-                    <li><code>vPosition</code> contient la position du point de la sphère correspondant à notre pixel</li> // TODO: reformuler
-                    <li><code>vNormal</code> contient le vecteur normal à la sphère au point correspondant à notre pixel</li>
-                    <li><code>uLightDirection</code> contient la direction de la lumière</li>
-                    <li><code>uLightColor</code> contient la couleur de la lumière</li>
+                    <li><code>Position</code> contient la position du point du modèle correspondant à notre pixel</li>
+                    <li><code>Normal</code> contient le vecteur normal au modèle au point correspondant à notre pixel</li>
+                    <li><code>LightDirection</code> contient la direction de la lumière</li>
+                    <li><code>LightColor</code> contient la couleur de la lumière</li>
                 </ul>
-                <p>Expliquer in vs uniform</p>
-                <p>Le travail de notre shader sera donc de calculer la couleur finale du pixel à partir de tous ces paramètres, et de le stocker dans la variable spéciale <code>gl_FragColor</code></p>. <code>glFragColor</code> est un <code>vec4</code> (vecteur à 4 composantes) au format RGBA pour Red, Green, Blue, Alpha (= opacité). Toutes les composantes sont dans l'intervalle \([0, 1]\), donc <code>vec4(0., 0., 0., 1.)</code> représente du noir et <code>vec4(1., 1.,1., 1.)</code> du blanc. Pour que notre sphère soit composée d'une couleur unie il y a juste à choisir une couleur et à affecter <code>gl_FragColor</code> !
+                <p>Le travail de notre shader sera donc de calculer la couleur finale du pixel à partir de tous ces paramètres, et de le stocker dans la variable spéciale <code>gl_FragColor</code></p>. <code>glFragColor</code> est un <code>vec4</code> (vecteur à 4 composantes) au format RGBA pour Red, Green, Blue, Alpha (= opacité). Toutes les composantes sont dans l'intervalle \([0, 1]\), donc <code>vec4(0., 0., 0., 1.)</code> représente du noir et <code>vec4(1., 1.,1., 1.)</code> du blanc. Pour que notre modèle soit composée d'une couleur unie il y a juste à choisir une couleur et à affecter <code>gl_FragColor</code> !
 
                 <p>
                 <figure>
@@ -69,7 +68,28 @@ void main() {
                     </figure>
                 </p>
 
-                <h3>Étape 3: Modèle de Phong</h3>
+                <h3>Étape 3: Texture</h3>
+                <p>Pour l'instant notre sphère est d'une couleur unie, ce qui d'un point de vue visuel est assez peu intéressant. La manière classique pour ajouter des détail est d'utiliser une texture comme couleur de base plutôt qu'une couleur fixe, et c'est ce qu'on va faire dans cette partie. Avant ça j'aimerais juste expliquer rapidement comment on se ramène de notre modèle en 3D à une texture 2D. Plus précisément: j'ai un point sur mon modèle 3D, comment savoir quel pixel de ma texture je dois lui assigner ?</p>
+                <p>La première étape est pour celui qui crée le modèle 3D: celui-ci doit assigner à chaque sommet une position dans le carré \([0, 1]^2\). Autrement dit, à chaque triangle du modèle on fait correspondre un triangle dans la texture.</p>
+                <p>IMAGE</p>
+                <p>Ensuite pour trouver la position dans la texture de n'importe quel point du modèle, on a juste à interpoler entre les positions des sommets de son triangle. En fait on a pas à se précoccuper de faire l'interpolation, elle se fait automatiquement et le shader reçoit directement les coordonnées interpolées dans \([0, 1]^2\). C'est néanmoins là que se situe la différence entre les mots-clés <code>in</code> et <code>uniform</code>:</p>
+                <ul>
+                    <li><code>in</code> définit un attribut dont la valeur est donnée pour tous les sommets, et que l'on interpole entre les sommets. Ici cela correspond à la position, à la normale et aux coordonnées sur la texture</li>
+                    <li><code>uniform</code> définit un paramètre qui ne dépend pas du pixel considéré. Par exemple, la direction et la couleur de la lumière ne varient pas entre les pixels.</li>
+                </ul>
+                <p>Maintenant on va voir comment lire une texture depuis notre shader. Avant de pouvoir faire ça il faut bien sûr charger la texture mais ce n'est pas au shader de s'en occuper et ici j'ai déjà fait le nécessaire. On va donc ajouter un morceau de code au début du shader pour pouvoir accéder à ces nouveaux paramètres dont on a besoin:</p>
+                <pre><code>uniform sampler2D WoodTexture; // notre texture
+in vec2 TextureCoords; // coordonnées dans la texture du point considéré</code></pre>
+                <p>Pour lire le pixel de coordonnées <code>TextureCoords</code> dans la texture <code>WoodTexture</code> on utilise la fonction <code>texture</code>:</p>
+                <pre><code>vec3 baseColor = texture(WoodTexture, TextureCoords).rgb; // on ne s'intéresse pas à la 4e composante</code></pre>
+                <p>En multipliant cette couleur par le produit scalaire comme à l'étape précédente j'obtiens le résultat suivant:</p>
+                <p>
+                    <figure>
+                        <img src="res/resultat3.png" width=80% />
+                    </figure>
+                </p>
+                <p>Ça casse pas trois pattes à un canard, mais c'est quand même plus sympa qu'une sphère unie.</p>
+                <p>J'espère que ça vous a plu, si vous avez des remarques ou des questions n'hésitez pas à m'en faire part !</p>
             </article>
             <div id='wrap'>
                 <div id='container'></div>
@@ -78,10 +98,10 @@ void main() {
                     <button id='sphere'>Sphere</button>
                     <button id='box'>Box</button>
                     <button id='plane'>Plane</button>
-                    <div id="editor">in vec3 vPosition;
-in vec3 vNormal;
-uniform vec3 uLightDirection;
-uniform vec3 uLightColor;
+                    <div id="editor">in vec3 Position;
+in vec3 Normal;
+uniform vec3 LightDirection;
+uniform vec3 LightColor;
             
 void main() {
     vec3 finalColor = vec3(0., 0., 0.);
@@ -91,16 +111,16 @@ void main() {
                 </div>
             </div>
             <script id="vertexShader" type="x-shader/x-vertex">
-                        out vec3 vNormal;
-                        out vec3 vPosition;
-                        out vec2 vTextureCoords;
+                        out vec3 Normal;
+                        out vec3 Position;
+                        out vec2 TextureCoords;
 
             void main() {
                 mat4 M = projectionMatrix * modelViewMatrix;
-                vNormal = normalize(vec3(transpose(inverse(modelMatrix)) * vec4(normal, 0.)));
+                Normal = normalize(vec3(transpose(inverse(modelMatrix)) * vec4(normal, 0.)));
                 gl_Position = M * vec4(position, 1.);
-                vPosition = gl_Position.xyz;
-                vTextureCoords = uv;
+                Position = gl_Position.xyz;
+                TextureCoords = uv;
             }</script>
         <script src="js/three.js"></script>
         <script src="js/OrbitControls.js"></script>
