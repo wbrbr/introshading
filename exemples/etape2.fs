@@ -1,9 +1,9 @@
-in vec3 vPosition;
-in vec3 vNormal;
-uniform vec3 uLightDirection;
-uniform vec3 uLightColor;
+in vec3 Position;
+in vec3 Normal;
+uniform vec3 LightDirection;
+uniform vec3 LightColor;
             
 void main() {
-    vec3 finalColor = max(0., dot(vNormal, -uLightDirection)) * vec3(1., 0., 0.);
+    vec3 finalColor = max(0., dot(Normal, -LightDirection)) * vec3(1., 0., 0.);
     gl_FragColor = vec4(finalColor, 1.);
 }

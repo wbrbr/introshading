@@ -11,7 +11,7 @@
         <div id='main'>
             <article id='content' class='language-glsl'>
                 <h1>Introduction au shading</h1>
-                <p>Dans ce petit article on va s'intéresser à la dernière étape du pipeline graphique: le calcul de la couleur finale d'un pixel. Cette opération est réalisée par le fragment shader, qui est un type de shader (c'est-à-dire de programme qui s'exécute sur la carte graphique) dont le travail est de calculer la couleur finale d'un pixel. Pour faire ce calcul on aura besoin de la position du point de la scène correspondant au pixel, de la normale en ce point, de la position de la lumière ainsi que de sa couleur.</p>
+                <p>Dans ce petit article on va s'intéresser à la dernière étape du pipeline graphique: le calcul de la couleur finale d'un pixel. Cette opération est réalisée par le fragment shader, qui est un type de shader (c'est-à-dire de programme qui s'exécute sur la carte graphique) dont le travail est de calculer la couleur finale d'un pixel. Pour faire ce calcul on aura besoin de la position du point de la scène correspondant au pixel, de la normale en ce point, de la direction de la lumière ainsi que de sa couleur.</p>
 
                 <p>Notre objectif ici est d'apprendre à écrire des shaders basiques, et puis de voir comment coder quelques modèles de matériaux très simples.</p>
 
@@ -27,7 +27,7 @@ void main() {
     gl_FragColor = vec4(finalColor, 1.);
 }</code></pre>
                 <p>Voilà notre shader qui affiche pour l'instant un écran noir. Il est écrit dans un langage qui s'appelle GLSL (pour <i>OpenGL Shading Language</i>) et qui ressemble à du C en termes de syntaxe.</p>
-                <p>Les 3 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre quatre variables <code>Position, Normal, LightDirection, LightColor</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, c'est un type de base en GLSL)</p>
+                <p>Les 4 premières lignes commencent par les mots-clé <code>in</code> ou <code>uniform</code>: elle servent à déclarer que notre shader prend en paramètre quatre variables <code>Position, Normal, LightDirection, LightColor</code> qui sont toutes de type <code>vec3</code> (un vecteur de dimension 3, qui est un type de base en GLSL)</p>
                 <ul>
                     <li><code>Position</code> contient la position du point du modèle correspondant à notre pixel</li>
                     <li><code>Normal</code> contient le vecteur normal au modèle au point correspondant à notre pixel</li>
@@ -44,9 +44,10 @@ void main() {
                 </p>
 
                 <h3>Étape 2: matériau diffus</h3>
-                <p>Le modèle le plus simple de l'éclairage d'une surface est un matériau qui diffuse la lumière de manière uniforme dans toutes les directions. Ainsi les seuls paramètres qui ont un impact sur l'apparence d'un point de la surface sont son vecteur normal ainsi que la position de la lumière. En effet, plus la surface fait face à la lampe, plus celle reçoit de lumière</p>
+                <p>Le modèle le plus simple de l'éclairage d'une surface est un matériau qui diffuse la lumière de manière uniforme dans toutes les directions. Ainsi les seuls paramètres qui ont un impact sur l'apparence d'un point de la surface sont son vecteur normal ainsi que la direction de la lumière. En effet, plus la surface fait face à la lumière, plus elle reçoit de lumière:</p>
+                <p><img src="res/schema_scal.png" width=85%></p>
 
-                <p>Sur ces schémas on voit que plus la normale est alignée avec la direction de la lumière, plus notre surface est éclairée. Or on a un outil bien pratique pour mesurer l'alignement de deux vecteurs: le produit scalaire. La quantité de lumière reçue est en fait proportionnelle au produit scalaire de la normale \(\mathbf{n}\) et de la direction inverse de la lumière \(\mathbf{L}\): </p>
+                <p>Sur ces schémas on voit que plus la normale est alignée avec la direction de la lumière, plus notre surface est éclairée. Or on a un outil bien pratique pour mesurer l'alignement de deux vecteurs: le produit scalaire. La quantité de lumière reçue est en fait proportionnelle à l'aire de notre surface projetée dans la direction inverse \(\mathbf{L}\) de la lumière, qui est elle-même proportionnelle au produit scalaire de la normale \(\mathbf{n}\) par \(\mathbf{L}\): </p>
                 <p><img src="res/schema.png" width=50%/></p>
                 <p>Cela nous donne la formule suivante pour calculer la couleur d'un point de normale \(\mathbf{n}\) éclairé par une lumière de direction \(-\mathbf{L}\):
 
@@ -68,10 +69,14 @@ void main() {
                     </figure>
                 </p>
 
+                <p>
+                    <button class='spoiler'>Montrer le code (essaie de l'écrire toi-même avant!)</button>
+                </p>
+
                 <h3>Étape 3: Texture</h3>
                 <p>Pour l'instant notre sphère est d'une couleur unie, ce qui d'un point de vue visuel est assez peu intéressant. La manière classique pour ajouter des détail est d'utiliser une texture comme couleur de base plutôt qu'une couleur fixe, et c'est ce qu'on va faire dans cette partie. Avant ça j'aimerais juste expliquer rapidement comment on se ramène de notre modèle en 3D à une texture 2D. Plus précisément: j'ai un point sur mon modèle 3D, comment savoir quel pixel de ma texture je dois lui assigner ?</p>
                 <p>La première étape est pour celui qui crée le modèle 3D: celui-ci doit assigner à chaque sommet une position dans le carré \([0, 1]^2\). Autrement dit, à chaque triangle du modèle on fait correspondre un triangle dans la texture.</p>
-                <p>IMAGE</p>
+                <p><img src="res/schema_uv.png"/></p>
                 <p>Ensuite pour trouver la position dans la texture de n'importe quel point du modèle, on a juste à interpoler entre les positions des sommets de son triangle. En fait on a pas à se précoccuper de faire l'interpolation, elle se fait automatiquement et le shader reçoit directement les coordonnées interpolées dans \([0, 1]^2\). C'est néanmoins là que se situe la différence entre les mots-clés <code>in</code> et <code>uniform</code>:</p>
                 <ul>
                     <li><code>in</code> définit un attribut dont la valeur est donnée pour tous les sommets, et que l'on interpole entre les sommets. Ici cela correspond à la position, à la normale et aux coordonnées sur la texture</li>
@@ -90,6 +95,40 @@ in vec2 TextureCoords; // coordonnées dans la texture du point considéré</cod
                 </p>
                 <p>Ça casse pas trois pattes à un canard, mais c'est quand même plus sympa qu'une sphère unie.</p>
                 <p>J'espère que ça vous a plu, si vous avez des remarques ou des questions n'hésitez pas à m'en faire part !</p>
+                <hr/>
+                <p>Je vous mets mon code pour les 3 étapes pour vous aider si vous êtes bloqués (n'hésitez pas à poser des questions sinon):</p>
+                <h3>Étape 1</h3>
+                <pre><code>in vec3 Position;
+in vec3 Normal;
+uniform vec3 LightDirection;
+uniform vec3 LightColor;
+            
+void main() {
+    vec3 finalColor = vec3(1., 0., 0.);
+    gl_FragColor = vec4(finalColor, 1.);
+}</code></pre>
+                <h3>Étape 2</h3>
+<pre><code>in vec3 Position;
+in vec3 Normal;
+uniform vec3 LightDirection;
+uniform vec3 LightColor;
+            
+void main() {
+    vec3 finalColor = max(0., dot(Normal, -LightDirection)) * vec3(1., 0., 0.);
+    gl_FragColor = vec4(finalColor, 1.);
+}</code></pre>
+                <h3>Étape 3</h3>
+                <pre><code>in vec3 vPosition;
+in vec3 Normal;
+in vec2 TextureCoords;
+uniform vec3 LightDirection;
+uniform vec3 LightColor;
+uniform sampler2D WoodTexture;
+                                
+void main() {
+    vec3 finalColor = dot(Normal, -LightDirection) * texture(WoodTexture, TextureCoords).xyz;
+    gl_FragColor = vec4(finalColor, 1.);
+}</code></pre>
             </article>
             <div id='wrap'>
                 <div id='container'></div>

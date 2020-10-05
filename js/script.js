@@ -71,6 +71,13 @@ document.getElementById('plane').addEventListener('click', function() {
     mesh.geometry = plane;
 });
 
+for (let el of document.getElementsByClassName('spoiler')) {
+    el.addEventListener('click', function() {
+        el.nextElementSibling.style.display = 'block';
+    });
+}
+
+
 window.addEventListener('resize', function() {
     renderer.setSize(window.innerHeight / 2, window.innerHeight / 2);
 })
